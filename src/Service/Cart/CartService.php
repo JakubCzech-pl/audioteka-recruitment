@@ -9,7 +9,6 @@ use App\Entity\CartProduct;
 use App\Repository\CartProductRepository;
 use App\Repository\CartRepository;
 use App\Repository\ProductRepository;
-use Psr\Log\LoggerInterface;
 use Ramsey\Uuid\Uuid;
 
 class CartService implements CartServiceInterface
