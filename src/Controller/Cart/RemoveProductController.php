@@ -4,7 +4,6 @@ namespace App\Controller\Cart;
 
 use App\Entity\Cart;
 use App\Entity\CartProduct;
-use App\Entity\Product;
 use App\Messenger\MessageBusAwareInterface;
 use App\Messenger\MessageBusTrait;
 use App\Messenger\RemoveProductFromCart;
@@ -19,10 +18,10 @@ class RemoveProductController extends AbstractController implements MessageBusAw
 {
     use MessageBusTrait;
 
-    public function __invoke(Cart $cart, ?CartProduct $product): Response
+    public function __invoke(Cart $cart, ?CartProduct $cartProduct): Response
     {
-        if ($product !== null) {
-            $this->dispatch(new RemoveProductFromCart($cart->getId(), $product->getId()));
+        if ($cartProduct && $cart->hasProduct($cartProduct)) {
+            $this->dispatch(new RemoveProductFromCart($cart->getId(), $cartProduct->getId()));
         }
 
         return new Response('', Response::HTTP_ACCEPTED);

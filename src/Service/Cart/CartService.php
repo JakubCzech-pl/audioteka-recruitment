@@ -9,6 +9,7 @@ use App\Entity\CartProduct;
 use App\Repository\CartProductRepository;
 use App\Repository\CartRepository;
 use App\Repository\ProductRepository;
+use Psr\Log\LoggerInterface;
 use Ramsey\Uuid\Uuid;
 
 class CartService implements CartServiceInterface
@@ -56,7 +57,7 @@ class CartService implements CartServiceInterface
     public function removeProduct(string $cartId, string $cartProductId): void
     {
         $cart = $this->cartRepository->getById($cartId);
-        if ($cart) {
+        if (!$cart) {
             return;
         }
 

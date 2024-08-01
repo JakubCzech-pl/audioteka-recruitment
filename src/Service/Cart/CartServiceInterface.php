@@ -2,8 +2,6 @@
 
 namespace App\Service\Cart;
 
-use App\Service\Catalog\Product;
-
 interface CartServiceInterface
 {
     public function addProduct(string $cartId, string $productId, int $quantity): void;
