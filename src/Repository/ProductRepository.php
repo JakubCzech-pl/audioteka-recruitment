@@ -7,8 +7,13 @@ use App\Service\Catalog\ProductProvider;
 use App\Service\Catalog\ProductService;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
+use Doctrine\ORM\NonUniqueResultException;
 use Ramsey\Uuid\Uuid;
 
+/**
+ * @TODO Refactor the repository to contain only actions expected in repositories.
+ * @TODO Separate it from the ProductProvider and ProductService
+ */
 class ProductRepository implements ProductProvider, ProductService
 {
     private EntityRepository $repository;
@@ -26,6 +31,19 @@ class ProductRepository implements ProductProvider, ProductService
             ->getQuery()
             ->getResult()
         ;
+    }
+
+    public function getById(string $productId): ?Product
+    {
+        try {
+            return $this->repository->createQueryBuilder('p')
+                ->where('p.id = :productId')
+                ->setParameter('productId', $productId)
+                ->getQuery()
+                ->getOneOrNullResult();
+        } catch (NonUniqueResultException) {
+            return null;
+        }
     }
 
     public function getTotalCount(): int
