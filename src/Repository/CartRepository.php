@@ -2,47 +2,74 @@
 
 namespace App\Repository;
 
-use App\Entity\Product;
-use App\Service\Cart\Cart;
-use App\Service\Cart\CartService;
-use Doctrine\ORM\EntityManagerInterface;
-use Ramsey\Uuid\Uuid;
+use App\Entity\Cart;
+use App\Service\Cart\CartInterface;
+use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\ORM\NonUniqueResultException;
+use Doctrine\Persistence\ManagerRegistry;
 
-class CartRepository implements CartService
+class CartRepository extends ServiceEntityRepository
 {
-    public function __construct(private EntityManagerInterface $entityManager) {}
-
-    public function addProduct(string $cartId, string $productId): void
+    public function __construct(ManagerRegistry $registry)
     {
-        $cart = $this->entityManager->find(\App\Entity\Cart::class, $cartId);
-        $product = $this->entityManager->find(Product::class, $productId);
+        parent::__construct($registry, Cart::class);
+    }
 
-        if ($cart && $product && !$cart->hasProduct($product)) {
-            $cart->addProduct($product);
-            $this->entityManager->persist($cart);
-            $this->entityManager->flush();
+    public function getById(string $cartId): ?CartInterface
+    {
+        try {
+            return $this->createQueryBuilder('c')
+                ->where('c.id = :cartId')
+                ->setParameter('cartId', $cartId)
+                ->getQuery()
+                ->getOneOrNullResult();
+        } catch (NonUniqueResultException) {
+            return null;
         }
     }
 
-    public function removeProduct(string $cartId, string $productId): void
+    /**
+     * @return CartInterface[]
+     */
+    public function getAll(): array
     {
-        $cart = $this->entityManager->find(\App\Entity\Cart::class, $cartId);
-        $product = $this->entityManager->find(Product::class, $productId);
-
-        if ($cart && $product && $cart->hasProduct($product)) {
-            $cart->removeProduct($product);
-            $this->entityManager->persist($cart);
-            $this->entityManager->flush();
-        }
+        return $this->findAll();
     }
 
-    public function create(): Cart
+    public function save(CartInterface $cart): void
     {
-        $cart = new \App\Entity\Cart(Uuid::uuid4()->toString());
+        $this->_em->persist($cart);
+        $this->_em->flush();
+    }
 
-        $this->entityManager->persist($cart);
-        $this->entityManager->flush();
+    public function delete(CartInterface $cart): void
+    {
+        $this->_em->remove($cart);
+        $this->_em->flush();
+    }
 
-        return $cart;
+    public function deleteCartsOverTheLimit(): void
+    {
+        foreach ($this->getCartsWithProducts() as $cart) {
+            if ($cart->getTotalProductsQuantity() <= Cart::CAPACITY) {
+                continue;
+            }
+
+            $this->_em->remove($cart);
+        }
+
+        $this->_em->flush();
+    }
+
+    /**
+     * @return Cart[]
+     */
+    private function getCartsWithProducts(): array
+    {
+        return $this->createQueryBuilder('c')
+            ->addSelect('cp')
+            ->join('c.cartProducts', 'cp')
+            ->getQuery()
+            ->getResult();
     }
 }
