@@ -47,4 +47,29 @@ class CartRepository extends ServiceEntityRepository
         $this->_em->remove($cart);
         $this->_em->flush();
     }
+
+    public function deleteCartsOverTheLimit(): void
+    {
+        foreach ($this->getCartsWithProducts() as $cart) {
+            if ($cart->getTotalProductsQuantity() <= Cart::CAPACITY) {
+                continue;
+            }
+
+            $this->_em->remove($cart);
+        }
+
+        $this->_em->flush();
+    }
+
+    /**
+     * @return Cart[]
+     */
+    private function getCartsWithProducts(): array
+    {
+        return $this->createQueryBuilder('c')
+            ->addSelect('cp')
+            ->join('c.cartProducts', 'cp')
+            ->getQuery()
+            ->getResult();
+    }
 }
