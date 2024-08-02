@@ -63,6 +63,30 @@ class AddProductControllerTest extends WebTestCase
         self::assertCount(3, $response['products']);
     }
 
+    public function test_refuses_to_add_product_to_cart_over_quantity(): void
+    {
+        $uri = '/cart/' .
+            AddProductControllerFixture::CART_ID .
+            '/' .
+            AddProductControllerFixture::PRODUCTS_DATA[0][AddProductControllerFixture::ID_KEY];
+        $this->client->request('PUT', $uri, ['quantity' => 4]);
+        self::assertResponseStatusCodeSame(422);
+
+        $response = $this->getJsonResponse();
+        self::assertEquals(['error_message' => 'To not exceed the limit you can add only 3 product(s)'], $response);
+
+        $uri = '/cart/' .
+            AddProductControllerFixture::FULL_CART_ID .
+            '/' .
+            AddProductControllerFixture::PRODUCTS_DATA[0][AddProductControllerFixture::ID_KEY];
+
+        $this->client->request('PUT', $uri, ['quantity' => 3]);
+        self::assertResponseStatusCodeSame(422);
+
+        $response = $this->getJsonResponse();
+        self::assertEquals(['error_message' => 'Cart is Full'], $response);
+    }
+
     public function test_returns_404_if_cart_does_not_exist(): void
     {
         $this->client->request('PUT', '/cart/8e9efe09-3f5b-4681-9f6a-adb4a5a9f19c/00e91390-3af8-4735-bd06-0311e7131757');
