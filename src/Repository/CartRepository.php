@@ -50,13 +50,7 @@ class CartRepository extends ServiceEntityRepository
 
     public function deleteCartsOverTheLimit(): void
     {
-        $carts = $this->createQueryBuilder('c')
-            ->addSelect('cp')
-            ->join('c.cartProducts', 'cp')
-            ->getQuery()
-            ->getResult();
-
-        foreach ($carts as $cart) {
+        foreach ($this->getCartsWithProducts() as $cart) {
             if ($cart->getTotalProductsQuantity() <= Cart::CAPACITY) {
                 continue;
             }
@@ -65,5 +59,17 @@ class CartRepository extends ServiceEntityRepository
         }
 
         $this->_em->flush();
+    }
+
+    /**
+     * @return Cart[]
+     */
+    private function getCartsWithProducts(): array
+    {
+        return $this->createQueryBuilder('c')
+            ->addSelect('cp')
+            ->join('c.cartProducts', 'cp')
+            ->getQuery()
+            ->getResult();
     }
 }
