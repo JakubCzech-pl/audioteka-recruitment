@@ -17,14 +17,17 @@ use Symfony\Component\Routing\Annotation\Route;
  */
 class AddController extends AbstractController implements MessageBusAwareInterface
 {
+    public const REQUEST_PRODUCT_NAME_KEY = 'name';
+    public const REQUEST_PRODUCT_PRICE_KEY = 'price';
+
     use MessageBusTrait;
 
     public function __construct(private ErrorBuilder $errorBuilder) { }
 
     public function __invoke(Request $request): Response
     {
-        $name = trim($request->get('name'));
-        $price = (int)$request->get('price');
+        $name = trim($request->get(self::REQUEST_PRODUCT_NAME_KEY));
+        $price = (int) $request->get(self::REQUEST_PRODUCT_PRICE_KEY);
 
         if ($name === '' || $price < 1) {
             return new JsonResponse(

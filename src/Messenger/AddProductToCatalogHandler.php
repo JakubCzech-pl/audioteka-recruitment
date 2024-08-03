@@ -2,12 +2,12 @@
 
 namespace App\Messenger;
 
-use App\Service\Catalog\ProductService;
+use App\Service\Catalog\ProductServiceInterface;
 use Symfony\Component\Messenger\Handler\MessageHandlerInterface;
 
 class AddProductToCatalogHandler implements MessageHandlerInterface
 {
-    public function __construct(private ProductService $service) {}
+    public function __construct(private ProductServiceInterface $service) {}
 
     public function __invoke(AddProductToCatalog $command): void
     {
