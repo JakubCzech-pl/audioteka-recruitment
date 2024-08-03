@@ -3,17 +3,11 @@
 namespace App\Repository;
 
 use App\Entity\Product;
-use App\Service\Catalog\ProductService;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\ORM\NonUniqueResultException;
 use Doctrine\Persistence\ManagerRegistry;
-use Ramsey\Uuid\Uuid;
 
-/**
- * @TODO Refactor the repository to contain only actions expected in repositories.
- * @TODO Separate it from ProductService
- */
-class ProductRepository extends ServiceEntityRepository implements ProductService
+class ProductRepository extends ServiceEntityRepository
 {
     public function __construct(ManagerRegistry $registry)
     {
@@ -48,27 +42,29 @@ class ProductRepository extends ServiceEntityRepository implements ProductServic
         return $this->count([]);
     }
 
-    public function exists(string $productId): bool
+    public function update(string $productId, string $name, int $price): void
     {
-        return $this->find($productId) !== null;
+        $this->createQueryBuilder('p')
+            ->update()
+            ->set('p.name', ':name')
+            ->set('p.priceAmount', ':priceAmount')
+            ->where('p.id = :productId')
+            ->setParameter('productId', $productId)
+            ->setParameter('name', $name)
+            ->setParameter('priceAmount', $price)
+            ->getQuery()
+            ->execute();
     }
 
-    public function add(string $name, int $price): Product
+    public function save(Product $product): void
     {
-        $product = new Product(Uuid::uuid4(), $name, $price);
-
         $this->_em->persist($product);
         $this->_em->flush();
-
-        return $product;
     }
 
-    public function remove(string $id): void
+    public function delete(Product $product): void
     {
-        $product = $this->find($id);
-        if ($product !== null) {
-            $this->_em->remove($product);
-            $this->_em->flush();
-        }
+        $this->_em->remove($product);
+        $this->_em->flush();
     }
 }

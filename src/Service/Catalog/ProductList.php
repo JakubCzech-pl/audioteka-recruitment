@@ -10,8 +10,6 @@ class ProductList implements ProductListInterface
     private const NAME_KEY = 'name';
     private const PRICE_KEY = 'price';
 
-    private const CREATED_AT_KEY = 'created_at';
-
     /**
      * @param ProductInterface[] $products
      */
