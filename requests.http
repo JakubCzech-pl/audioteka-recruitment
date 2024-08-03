@@ -5,13 +5,24 @@ Content-Type: application/x-www-form-urlencoded
 
 name=Example product 0&price=1200
 
+### Edit product
+
+PUT https://localhost/products/{{product_id}}
+Content-Type: application/x-www-form-urlencoded
+
+name=New Name&price=20251
+
 ### Remove product from catalog
 
-DELETE https://localhost/products/ec0c615d-0571-4e4b-9582-59a7edaf8117
+DELETE https://localhost/products/{{product_id}}
 
 ### List products
 
 GET https://localhost/products
+
+### View Product
+
+GET https://localhost/product/{{product_id}}
 
 ### Create cart
 
@@ -21,11 +32,12 @@ POST https://localhost/cart
 
 ### Add product to cart
 
-PUT https://localhost/cart/{{cart_id}}/c9c74236-7545-4c4c-a877-0561b67d0618
+PUT https://localhost/cart/{{cart_id}}/{{product_id}}
 
+quantity=2
 ### Remove product from cart
 
-DELETE https://localhost/cart/{{cart_id}}/00c5560b-efb9-4277-beb8-5b4feb594779
+DELETE https://localhost/cart/{{cart_id}}/{{cart_product_id}}
 
 ### Show cart
 
