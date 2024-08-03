@@ -2,12 +2,14 @@
 
 namespace App\Entity;
 
+use App\Repository\ProductRepository;
+use App\Service\Catalog\ProductInterface;
 use Doctrine\ORM\Mapping as ORM;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
 
-#[ORM\Entity]
-class Product implements \App\Service\Catalog\Product
+#[ORM\Entity(repositoryClass: ProductRepository::class)]
+class Product implements ProductInterface
 {
     #[ORM\Id]
     #[ORM\Column(type: 'uuid', nullable: false)]
@@ -19,11 +21,15 @@ class Product implements \App\Service\Catalog\Product
     #[ORM\Column(type: 'integer', nullable: false)]
     private string $priceAmount;
 
-    public function __construct(string $id, string $name, int $price)
+    #[ORM\Column(type: 'datetime', nullable: false)]
+    private \DateTime $createdAt;
+
+    public function __construct(string $id, string $name, int $price, ?\DateTime $createdAt = null)
     {
         $this->id = Uuid::fromString($id);
         $this->name = $name;
         $this->priceAmount = $price;
+        $this->createdAt = $createdAt ?: new \DateTime();
     }
 
     public function getId(): string
@@ -39,5 +45,10 @@ class Product implements \App\Service\Catalog\Product
     public function getPrice(): int
     {
         return $this->priceAmount;
+    }
+
+    public function getCreatedAt(): \DateTime
+    {
+        return $this->createdAt;
     }
 }

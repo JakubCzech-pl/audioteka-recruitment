@@ -2,41 +2,38 @@
 
 namespace App\Repository;
 
-use App\Service\Catalog\Product;
-use App\Service\Catalog\ProductProvider;
+use App\Entity\Product;
 use App\Service\Catalog\ProductService;
-use Doctrine\ORM\EntityManagerInterface;
-use Doctrine\ORM\EntityRepository;
+use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\ORM\NonUniqueResultException;
+use Doctrine\Persistence\ManagerRegistry;
 use Ramsey\Uuid\Uuid;
 
 /**
  * @TODO Refactor the repository to contain only actions expected in repositories.
- * @TODO Separate it from the ProductProvider and ProductService
+ * @TODO Separate it from ProductService
  */
-class ProductRepository implements ProductProvider, ProductService
+class ProductRepository extends ServiceEntityRepository implements ProductService
 {
-    private EntityRepository $repository;
-
-    public function __construct(private EntityManagerInterface $entityManager)
+    public function __construct(ManagerRegistry $registry)
     {
-        $this->repository = $this->entityManager->getRepository(\App\Entity\Product::class);
+        parent::__construct($registry, Product::class);
     }
 
-    public function getProducts(int $page = 0, int $count = 3): iterable
+    public function getProductsOrderedByDate(int $limit, int $startsFrom = 0, string $order = 'DESC'): array
     {
-        return $this->repository->createQueryBuilder('p')
-            ->setMaxResults($count)
-            ->setFirstResult($page * $count)
+        return $this->createQueryBuilder('p')
+            ->orderBy('p.createdAt', $order)
+            ->setMaxResults($limit)
+            ->setFirstResult($startsFrom)
             ->getQuery()
-            ->getResult()
-        ;
+            ->getResult();
     }
 
     public function getById(string $productId): ?Product
     {
         try {
-            return $this->repository->createQueryBuilder('p')
+            return $this->createQueryBuilder('p')
                 ->where('p.id = :productId')
                 ->setParameter('productId', $productId)
                 ->getQuery()
@@ -46,32 +43,32 @@ class ProductRepository implements ProductProvider, ProductService
         }
     }
 
-    public function getTotalCount(): int
+    public function countAll(): int
     {
-        return $this->repository->createQueryBuilder('p')->select('count(p.id)')->getQuery()->getSingleScalarResult();
+        return $this->count([]);
     }
 
     public function exists(string $productId): bool
     {
-        return $this->repository->find($productId) !== null;
+        return $this->find($productId) !== null;
     }
 
     public function add(string $name, int $price): Product
     {
-        $product = new \App\Entity\Product(Uuid::uuid4(), $name, $price);
+        $product = new Product(Uuid::uuid4(), $name, $price);
 
-        $this->entityManager->persist($product);
-        $this->entityManager->flush();
+        $this->_em->persist($product);
+        $this->_em->flush();
 
         return $product;
     }
 
     public function remove(string $id): void
     {
-        $product = $this->repository->find($id);
+        $product = $this->find($id);
         if ($product !== null) {
-            $this->entityManager->remove($product);
-            $this->entityManager->flush();
+            $this->_em->remove($product);
+            $this->_em->flush();
         }
     }
 }

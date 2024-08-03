@@ -2,42 +2,62 @@
 
 namespace App\ResponseBuilder;
 
-use App\Service\Catalog\Product;
+use App\Controller\Catalog\ListController;
+use App\Service\Catalog\ProductListProviderInterface;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 class ProductListBuilder
 {
-    public function __construct(private UrlGeneratorInterface $urlGenerator) { }
+    private const PREVIOUS_PAGE_KEY = 'previous_page';
+    private const NEXT_PAGE_KEY = 'next_page';
+    private const TOTAL_PRODUCTS_COUNT_KEY = 'count';
+    private const PRODUCTS_KEY = 'products';
 
-    /**
-     * @param Product[] $products
-     */
-    public function __invoke(iterable $products, int $page, int $maxPerPage, int $totalCount): array
+    public function __construct(
+        private ProductListProviderInterface $productListProvider,
+        private UrlGeneratorInterface $urlGenerator
+    ) {}
+
+    public function __invoke(string $routeName, int $page): array
     {
-        $data = [
-            'previous_page' => null,
-            'next_page' => null,
-            'count' => $totalCount,
-            'products' => []
+        $totalCount = $this->productListProvider->getTotalCount();
+
+        return [
+            self::PREVIOUS_PAGE_KEY => $this->getPreviousPageUrl($routeName, $page),
+            self::NEXT_PAGE_KEY => $this->getNextPageUrl($routeName, $page, $totalCount),
+            self::TOTAL_PRODUCTS_COUNT_KEY => $totalCount,
+            self::PRODUCTS_KEY => $this->getProducts($page)
         ];
+    }
 
-        if ($page > 0) {
-            $data['previous_page'] = $this->urlGenerator->generate('product-list', ['page' => $page - 1]);
+    private function getPreviousPageUrl(string $routeName, int $page): ?string
+    {
+        if ($page <= 0) {
+            return null;
         }
 
-        $lastPage = ceil($totalCount / $maxPerPage);
+        return $this->urlGenerator->generate(
+            $routeName,
+            [ListController::PAGE_REQUEST_PARAM_KEY => $page - 1]
+        );
+    }
+
+    private function getNextPageUrl(string $routeName, int $page, int $totalCount): ?string
+    {
+        $lastPage = ceil($totalCount / ProductListProviderInterface::MAX_PER_PAGE);
         if ($page < $lastPage - 1) {
-            $data['next_page'] = $this->urlGenerator->generate('product-list', ['page' => $page + 1]);
+            return $this->urlGenerator->generate(
+                $routeName,
+                [ListController::PAGE_REQUEST_PARAM_KEY => $page + 1]);
         }
 
-        foreach ($products as $product) {
-            $data['products'][] = [
-                'id' => $product->getId(),
-                'name' => $product->getName(),
-                'price' => $product->getPrice()
-            ];
-        }
+        return null;
+    }
 
-        return $data;
+    private function getProducts(int $page): array
+    {
+        return \iterator_to_array(
+            $this->productListProvider->getList($page)->getProducts()
+        );
     }
 }

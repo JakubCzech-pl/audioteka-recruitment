@@ -34,11 +34,11 @@ class CartProduct implements CartProductInterface
     private int $quantity;
 
     public function __construct(
-        string $id,
+        string        $id,
         CartInterface $cart,
-        Product $product,
-        int $price,
-        int $quantity = 1
+        Product       $product,
+        int           $price,
+        int           $quantity = 1
     ) {
         $this->id = Uuid::fromString($id);
         $this->cart = $cart;
