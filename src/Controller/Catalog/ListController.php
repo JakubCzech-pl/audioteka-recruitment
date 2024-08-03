@@ -3,7 +3,6 @@
 namespace App\Controller\Catalog;
 
 use App\ResponseBuilder\ProductListBuilder;
-use App\Service\Catalog\ProductProvider;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -15,20 +14,25 @@ use Symfony\Component\Routing\Annotation\Route;
  */
 class ListController extends AbstractController
 {
-    private const MAX_PER_PAGE = 3;
+    public const PAGE_REQUEST_PARAM_KEY = 'page';
 
-    public function __construct(private ProductProvider $productProvider, private ProductListBuilder $productListBuilder) { }
+    private const ROUTE_NAME = 'product-list';
+
+    public function __construct(private ProductListBuilder $productListBuilder) {}
 
     public function __invoke(Request $request): Response
     {
-        $page = max(0, (int)$request->get('page', 0));
-
-        $products = $this->productProvider->getProducts($page, self::MAX_PER_PAGE);
-        $totalCount = $this->productProvider->getTotalCount();
-
         return new JsonResponse(
-            $this->productListBuilder->__invoke($products, $page, self::MAX_PER_PAGE, $totalCount),
+            $this->productListBuilder->__invoke(self::ROUTE_NAME, $this->getPageFromRequest($request)),
             Response::HTTP_OK
+        );
+    }
+
+    private function getPageFromRequest(Request $request): int
+    {
+        return \max(
+            0,
+            (int) $request->get(self::PAGE_REQUEST_PARAM_KEY, 0)
         );
     }
 }
